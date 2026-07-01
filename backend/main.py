@@ -259,3 +259,56 @@ async def approve_submission(submission_id: int, email: str):
         conn.commit()
         conn.close()
         return {"status": "approved"}
+
+class CopilotQuery(BaseModel):
+    query: str
+
+@app.post("/api/copilot")
+async def run_copilot(data: CopilotQuery):
+    """
+    Queries published research repository using natural language prompt.
+    """
+    all_papers = await get_submissions()
+    published_papers = [p for p in all_papers if p["status"] == "PUBLISHED"]
+    
+    # Format papers context for LLM
+    papers_text = ""
+    for p in published_papers:
+        tags_str = ", ".join([t["name"] for t in p["tags"]])
+        papers_text += f"ID: {p['id']} | Title: {p['title']}\nAbstract: {p['abstract']}\nTags: {tags_str}\n\n"
+        
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            prompt = f"""
+            You are the ResVerity AI Copilot, a research discovery assistant. The user is asking: "{data.query}"
+            
+            Here is the list of published academic research outputs in the repository:
+            {papers_text}
+            
+            Analyze the request and list the most relevant papers. Write a friendly, conversational response summarizing how they fit. Refer to them by title. Keep it to 3-4 sentences.
+            If no papers are relevant, explain that we don't have matching research on that topic yet.
+            """
+            response = model.generate_content(prompt)
+            return { "response": response.text.strip() }
+        except Exception as e:
+            print(f"Copilot Gemini error: {e}")
+            
+    # Local Matcher Fallback
+    query_words = data.query.lower().split()
+    matches = []
+    for p in published_papers:
+        score = sum(1 for w in query_words if w in p["title"].lower() or w in p["abstract"].lower() or any(w in t["name"].lower() for t in p["tags"]))
+        if score > 0:
+            matches.append(p)
+            
+    if matches:
+        rec_list = "\n".join([f"- **{p['title']}** (SDG: {', '.join([t['name'] for t in p['tags'] if t['type']=='SDG'])}): {p['abstract'][:120]}..." for p in matches])
+        return { "response": f"I found the following matching papers in our directory:\n\n{rec_list}\n\nFeel free to request access to collaborate with the student authors!" }
+    else:
+        return { "response": f"I couldn't find any published research matching '{data.query}' in our database. Try searching for topics like 'farming', 'sari-sari', or 'credentials'." }
+

@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupDropzone();
     setupSubmission();
     loadSubmissions();
+    setupCopilot();
 });
 
 // Load Submissions from FastAPI backend
@@ -440,3 +441,79 @@ function renderDirectory() {
 
     document.getElementById("directorySearchInput").oninput = renderDirectory;
 }
+
+// AI Copilot Controller
+function setupCopilot() {
+    const bubble = document.getElementById("copilotBubble");
+    const drawer = document.getElementById("copilotDrawer");
+    const closeBtn = document.getElementById("closeCopilot");
+    const sendBtn = document.getElementById("sendCopilotBtn");
+    const input = document.getElementById("copilotInput");
+    const chatLog = document.getElementById("copilotChatLog");
+
+    bubble.addEventListener("click", () => {
+        const isHidden = drawer.style.display === "none" || !drawer.style.display;
+        drawer.style.display = isHidden ? "flex" : "none";
+    });
+
+    closeBtn.addEventListener("click", () => {
+        drawer.style.display = "none";
+    });
+
+    sendBtn.addEventListener("click", submitQuery);
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submitQuery();
+    });
+
+    async function submitQuery() {
+        const queryText = input.value.trim();
+        if (!queryText) return;
+
+        // Append User Message
+        appendMessage(queryText, "user");
+        input.value = "";
+
+        // Append loading indicator
+        const loadingDiv = appendMessage("Thinking...", "bot", true);
+
+        try {
+            const res = await fetch(`${API_BASE}/copilot`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: queryText })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                loadingDiv.innerHTML = data.response.replace(/\n/g, "<br>");
+            } else {
+                loadingDiv.textContent = "Error getting response from backend.";
+            }
+        } catch (e) {
+            // Local fallback simulation
+            loadingDiv.textContent = `Offline simulation match result for '${queryText}'. To enable live AI, run uvicorn main:app and set your GEMINI_API_KEY!`;
+        }
+        
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function appendMessage(text, sender, isLoading = false) {
+        const msgDiv = document.createElement("div");
+        const isUser = sender === "user";
+        
+        msgDiv.style.background = isUser ? "var(--gradient-accent)" : "rgba(255,255,255,0.05)";
+        msgDiv.style.color = isUser ? "white" : "var(--text-primary)";
+        msgDiv.style.padding = "0.75rem";
+        msgDiv.style.borderRadius = "var(--radius-md)";
+        msgDiv.style.maxWidth = "85%";
+        msgDiv.style.alignSelf = isUser ? "flex-end" : "flex-start";
+        msgDiv.style.lineHeight = "1.4";
+        msgDiv.style.wordBreak = "break-word";
+        msgDiv.textContent = text;
+        
+        chatLog.appendChild(msgDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        return msgDiv;
+    }
+}
+
