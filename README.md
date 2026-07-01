@@ -5,59 +5,60 @@ Built for **Reverse Pitch Challenge #4** in collaboration with **DTI Region 7** 
 
 ---
 
-## 📖 The Problem
-Research outputs (capstones, theses, and papers) in Higher Education Institutions (HEIs) often reside in unlinked folders, local drives, or email chains. This creates **zero centralized search capability**, leads to **duplicate student project efforts**, and **hinders the commercialization** of student research.
+## 💡 The Solution
+**ResVerity** is a production-ready Web Application designed to collect, index, audit, and showcase academic output. It is built using the requested modern stack:
 
-However, exposing research publicly risks intellectual property piracy. Trust is paramount to academic output management.
-
----
-
-## 💡 The Solution: ResVerity
-**ResVerity** is a unified, secure portal designed to collect, index, audit, and showcase Cebu's academic outputs under strict access control and anti-piracy mechanisms:
-
-1. **Standardized Curation Pipeline:** Captures precise metadata, funding structures, and SDG alignment tags.
-2. **Co-Author Shield:** Academic papers remain locked in a hidden draft status until all listed co-authors authenticate via institutional SSO and cryptographically sign off.
-3. **Semantic Mapping Engine (AI Tagger):** Uses Python-driven PDF scraping and the Gemini API to extract abstract content and auto-categorize papers into UN Sustainable Development Goals (SDGs) and technical domains.
-4. **Public Discovery Directory:** Connects Cebu's validated student research outputs with local incubators, companies, and community organizations.
+* **Frontend:** **Next.js (App Router)** with React state components.
+* **Styling:** Custom premium Glassmorphism & Dark Mode.
+* **Database/Storage:** **Supabase (PostgreSQL + Bucket Storage)** integration, with a built-in zero-config **local JSON filesystem database** fallback for easy offline offline demo runs.
+* **AI NLP Services:** **Google Gemini API** integration for automated PDF text parsing and SDG target mapping.
 
 ---
 
 ## 🛠️ Project Structure
 ```bash
 DASIG/
-├── backend/
-│   ├── main.py             # FastAPI entry point & REST endpoints
-│   ├── parser.py           # PDF Text Extraction (PyPDF)
-│   ├── tagger.py           # Gemini API & Fallback SDG classifier
-│   ├── requirements.txt    # Python dependencies
-│   └── schema.sql          # Database table structures (PostgreSQL)
-├── index.html              # Frontend portal dashboard (SSO, Submission, Directory)
-├── style.css               # Design system styling (Glassmorphism & Dark Mode)
-└── app.js                  # Frontend client connector & mock fallbacks
+├── web/
+│   ├── app/
+│   │   ├── api/             # API Router Endpoints
+│   │   │   ├── upload/      # PDF text parsing & SDG tagging
+│   │   │   ├── submissions/ # Read/Write research metadata
+│   │   │   ├── approve/     # Co-Author cryptographic checks
+│   │   │   └── copilot/     # AI chatbot discovery routing
+│   │   ├── layout.js        # Global wrapper metadata
+│   │   ├── globals.css      # Premium design token styles
+│   │   └── page.js          # Core React client view
+│   ├── lib/
+│   │   ├── supabase.js      # Supabase Client Initializer
+│   │   └── localDb.js       # Local JSON filesystem storage helper
+│   ├── package.json         # Web dependencies
+│   └── jsconfig.json        # Import path mappings
+├── legacy-prototype/        # Backup of initial HTML/JS prototype files
+├── .env.example             # Environment configuration template
+└── package.json             # Root script proxies
 ```
 
 ---
 
 ## 🚀 How to Run the App Locally
 
-### **1. Spin up the Backend API**
-Open your terminal in the `backend/` directory:
+### **1. Configure Settings (Optional)**
+Copy `.env.example` in the root folder to `.env.local` inside the `web/` folder:
+```bash
+cp .env.example web/.env.local
+```
+Add your `GEMINI_API_KEY` to enable live AI parser classification.
+*(If empty, the app will run with a smart local rule engine fallback.)*
+
+### **2. Launch the Development Server**
+From the root repository folder, simply run:
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
+# Install root script proxies
+npm install
 
-# Run the API server
-uvicorn main:app --reload
+# Start the dev server
+npm run dev
 ```
-*Note: The backend automatically boots in **SQLite Mode** (`resverity.db`) if no Supabase environment credentials are set, making it fully ready for presentation without database setups!*
 
-### **2. Open the Frontend**
-Open [index.html](index.html) directly in your browser. The client will automatically detect the local API server and switch from simulation mode to live database operations.
-
----
-
-## 🔒 Crucial Security Architecture
-* **Row-Level Security (RLS):** Database visibility tiers keep draft publications locked from public metadata queries.
-* **Hybrid Auth Flow:** Restricts uploads strictly to institutional SSO verification bounds (e.g., student/faculty logins).
-* **Pre-signed Access Links:** High-tier documents serve raw PDFs via temporary AWS S3/Supabase Storage links to prevent direct URL sharing.
+Open **`http://localhost:3000`** in your browser. The app is fully operational and ready to demonstrate!
