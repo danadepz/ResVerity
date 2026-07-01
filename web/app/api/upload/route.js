@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createRequire } from 'module';
+import { supabase, useSupabase } from '@/lib/supabase';
 
 // Polyfill canvas classes for pdf-parse inside Node environment
 if (typeof global !== 'undefined') {
@@ -31,6 +32,30 @@ export async function POST(request) {
             console.error("PDF Parsing error:", e);
         }
 
+        // Upload PDF to Supabase Storage if active
+        let pdfUrl = "";
+        if (useSupabase) {
+            try {
+                const uniqueFileName = `${Date.now()}_${file.name}`;
+                const { data: uploadData, error: uploadErr } = await supabase.storage
+                    .from('research-outputs')
+                    .upload(uniqueFileName, buffer, {
+                        contentType: 'application/pdf',
+                        upsert: true
+                    });
+                
+                if (uploadErr) throw uploadErr;
+                
+                const { data: urlData } = supabase.storage
+                    .from('research-outputs')
+                    .getPublicUrl(uniqueFileName);
+                    
+                pdfUrl = urlData.publicUrl;
+            } catch (e) {
+                console.error("Supabase Storage upload failed:", e);
+            }
+        }
+
         // Parse title from PDF first line or filename
         const lines = pdfText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
         const parsedTitle = lines[0] ? lines[0] : file.name.replace(".pdf", "").replace(/[_-]/g, " ");
@@ -43,7 +68,8 @@ export async function POST(request) {
             filename: file.name,
             title: parsedTitle.substring(0, 200),
             abstract: parsedAbstract,
-            tags: tags
+            tags: tags,
+            pdf_url: pdfUrl
         });
     } catch (error) {
         console.error("Upload API Error:", error);

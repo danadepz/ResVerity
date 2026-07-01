@@ -41,7 +41,7 @@ export async function GET() {
 export async function POST(request) {
     try {
         const body = await request.json();
-        const { title, abstract, visibility, uploaded_by, co_authors } = body;
+        const { title, abstract, visibility, uploaded_by, co_authors, pdf_url } = body;
         
         if (!title || !abstract) {
             return NextResponse.json({ error: 'Title and Abstract are required' }, { status: 400 });
@@ -56,7 +56,8 @@ export async function POST(request) {
                     abstract,
                     visibility_tier: visibility,
                     status: 'PENDING_VERIFICATION',
-                    uploaded_by
+                    uploaded_by,
+                    pdf_url
                 }).select();
                 
                 if (subErr) throw subErr;
@@ -101,7 +102,8 @@ export async function POST(request) {
             uploadedBy: uploaded_by,
             coAuthors: co_authors.map(email => ({ email, approved: false })),
             tags: generateSimpleTags(title, abstract),
-            date: dateString
+            date: dateString,
+            pdfUrl: pdf_url
         };
         
         localData.push(newSubmission);

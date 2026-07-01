@@ -33,6 +33,7 @@ export default function Home() {
     const [coAuthorsInput, setCoAuthorsInput] = useState('jane.doe@uc.edu.ph, mark.smith@uc.edu.ph');
     const [fileName, setFileName] = useState('');
     const [uploadStatus, setUploadStatus] = useState('');
+    const [pdfUrl, setPdfUrl] = useState('');
 
     // Search
     const [searchVal, setSearchVal] = useState('');
@@ -132,6 +133,7 @@ export default function Home() {
                 const data = await res.json();
                 setPaperTitle(data.title);
                 setPaperAbstract(data.abstract);
+                setPdfUrl(data.pdf_url);
                 setUploadStatus("📄 PDF Parsed and Classified successfully!");
             } else {
                 setUploadStatus("Failed to parse PDF using backend. Setting defaults.");
@@ -170,7 +172,8 @@ export default function Home() {
             abstract: paperAbstract,
             visibility: paperVisibility,
             uploaded_by: currentUser.email,
-            co_authors: coAuthors
+            co_authors: coAuthors,
+            pdf_url: pdfUrl
         };
 
         try {
@@ -185,6 +188,7 @@ export default function Home() {
                 setPaperAbstract('');
                 setFileName('');
                 setUploadStatus('');
+                setPdfUrl('');
                 setActiveSection('verification');
                 fetchSubmissions();
             } else {
