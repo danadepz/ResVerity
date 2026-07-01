@@ -433,7 +433,7 @@ export default function Home() {
                             </div>
                             
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div class="form-group">
+                                <div className="form-group">
                                     <label>Visibility Control Tier</label>
                                     <select 
                                         className="form-input" 
