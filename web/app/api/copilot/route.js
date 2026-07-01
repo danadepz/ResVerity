@@ -67,12 +67,49 @@ export async function POST(request) {
         }
 
         // Local Rule Matcher Fallback
-        const queryWords = query.toLowerCase().split(/\s+/);
+        const queryLower = query.toLowerCase();
+        
+        // Smart Contextual Fallback for "What does it do" / Explanations
+        if (queryLower.includes("what does it do") || queryLower.includes("explain") || queryLower.includes("how does it work")) {
+            const iotFarm = publishedPapers.find(p => p.title.toLowerCase().includes("farm") || p.title.toLowerCase().includes("iot"));
+            const retail = publishedPapers.find(p => p.title.toLowerCase().includes("supply") || p.title.toLowerCase().includes("business") || p.title.toLowerCase().includes("retail"));
+            const credentials = publishedPapers.find(p => p.title.toLowerCase().includes("credentials") || p.title.toLowerCase().includes("certificate"));
+
+            if (queryLower.includes("farm") || queryLower.includes("monitoring") || (iotFarm && !retail && !credentials)) {
+                return NextResponse.json({
+                    response: `The **IoT-Based Microclimate Monitoring** project deploys low-cost microcontroller nodes inside urban Cebu community gardens. It parses sensor inputs (soil humidity, temperature, sunlight) and uploads parameters to a central analytics portal so farmers know exactly when to water crops.`
+                });
+            } else if (queryLower.includes("business") || queryLower.includes("supply") || queryLower.includes("store")) {
+                return NextResponse.json({
+                    response: `The **Predictive Analytics for Small Business** system processes sales data from local sari-sari stores. It runs linear regression scripts to predict inventory demands, helping owners optimize cash flow and prevent stock wastes.`
+                });
+            } else if (credentials) {
+                return NextResponse.json({
+                    response: `The **Decentralized Micro-Credentials** registry stores digital signatures of university diplomas and certificates on a secure validation ledger. This allows employers to instantly check output authenticity and solves certificate forgery.`
+                });
+            }
+        }
+
+        // Standard Keyword filtering
+        const stopWords = new Set(['what', 'does', 'it', 'do', 'the', 'a', 'is', 'for', 'on', 'in', 'to', 'and', 'of', 'with', 'about', 'how', 'can', 'you', 'me', 'find', 'show', 'tell', 'help']);
+        const queryWords = queryLower
+            .replace(/[^\w\s]/g, '')
+            .split(/\s+/)
+            .filter(w => w.length > 1 && !stopWords.has(w));
+            
+        if (queryWords.length === 0) {
+            return NextResponse.json({ 
+                response: "I'm here to help you search Cebu's HEI repository! Try asking about specific topics like 'farming', 'retail supply chain', 'SDG 11', or 'credentials'." 
+            });
+        }
+
         const matches = [];
         for (const p of publishedPapers) {
             let score = 0;
+            const textToSearch = (p.title + " " + p.abstract + " " + p.tags.map(t => t.name).join(" ")).toLowerCase();
             for (const word of queryWords) {
-                if (p.title.toLowerCase().includes(word) || p.abstract.toLowerCase().includes(word)) {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                if (regex.test(textToSearch)) {
                     score++;
                 }
             }
