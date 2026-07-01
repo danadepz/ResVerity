@@ -10,6 +10,7 @@ export default function Home() {
         role: "student"
     });
     const [password, setPassword] = useState('');
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [toast, setToast] = useState({ message: '', visible: false, type: 'info' });
 
     const showToast = (message, type = 'info') => {
@@ -100,8 +101,7 @@ export default function Home() {
     };
 
     const handleLogout = () => {
-        setPassword('');
-        setIsLoggedIn(false);
+        setShowLogoutConfirm(true);
     };
 
     // Dropzone Upload Simulation
@@ -291,6 +291,36 @@ export default function Home() {
                     animation: 'fadeIn 0.2s ease-out'
                 }}>
                     {toast.message}
+                </div>
+            )}
+
+            {/* LOGOUT CONFIRMATION MODAL */}
+            {showLogoutConfirm && (
+                <div className="sso-overlay" style={{ zIndex: 300 }}>
+                    <div className="sso-card" style={{ padding: '2rem' }}>
+                        <h2>Log Out</h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Are you sure you want to end your current session?</p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button 
+                                onClick={() => {
+                                    setPassword('');
+                                    setIsLoggedIn(false);
+                                    setShowLogoutConfirm(false);
+                                }} 
+                                className="btn" 
+                                style={{ background: 'var(--accent-rose)', color: 'white', flex: 1 }}
+                            >
+                                Yes, Log Out
+                            </button>
+                            <button 
+                                onClick={() => setShowLogoutConfirm(false)} 
+                                className="btn btn-secondary"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
             
