@@ -484,55 +484,55 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {currentUser.role === 'dean' ? (
-                            <div className="card">
-                                <h2>DASIG Governance Analytics Center</h2>
-                                <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                                    Real-time mapping of research outcomes to UN Sustainable Development Goals (SDGs) and technical domains.
-                                </p>
-                                
-                                <div className="charts-row">
-                                    {/* SDG target counts representation */}
-                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                        <h4 style={{ marginBottom: '1rem' }}>SDG Target Alignments</h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                            {Object.entries(finalSdgCounts).map(([sdg, count], idx) => (
-                                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <span style={{ color: idx === 0 ? 'var(--accent-purple)' : idx === 1 ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontSize: '1rem' }}>●</span>
-                                                        {sdg}
-                                                    </span>
-                                                    <strong>{count} paper{count > 1 ? 's' : ''}</strong>
-                                                </div>
-                                            ))}
-                                        </div>
+                        <div className="card">
+                            <h2>DASIG Governance Analytics Center</h2>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                                Real-time mapping of research outcomes to UN Sustainable Development Goals (SDGs) and technical domains.
+                            </p>
+                            
+                            <div className="charts-row">
+                                {/* SDG target counts representation */}
+                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <h4 style={{ marginBottom: '1rem' }}>SDG Target Alignments</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {Object.entries(finalSdgCounts).map(([sdg, count], idx) => (
+                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <span style={{ color: idx === 0 ? 'var(--accent-purple)' : idx === 1 ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontSize: '1rem' }}>●</span>
+                                                    {sdg}
+                                                </span>
+                                                <strong>{count} paper{count > 1 ? 's' : ''}</strong>
+                                            </div>
+                                        ))}
                                     </div>
+                                </div>
 
-                                    {/* Tech Domains dynamic Bar chart representation */}
-                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                                        <h4 style={{ marginBottom: '1.5rem' }}>Thematic Domain Distribution</h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            {Object.entries(finalDomainCounts).map(([domain, count], idx) => {
-                                                const maxVal = Math.max(...Object.values(finalDomainCounts));
-                                                const percentage = maxVal > 0 ? (count / maxVal) * 100 : 50;
-                                                return (
-                                                    <div key={idx}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
-                                                            <span>{domain}</span>
-                                                            <strong>{count} paper{count > 1 ? 's' : ''}</strong>
-                                                        </div>
-                                                        <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                                                            <div style={{ width: `${percentage}%`, height: '100%', background: 'var(--gradient-accent)' }}></div>
-                                                        </div>
+                                {/* Tech Domains dynamic Bar chart representation */}
+                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                                    <h4 style={{ marginBottom: '1.5rem' }}>Thematic Domain Distribution</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {Object.entries(finalDomainCounts).map(([domain, count], idx) => {
+                                            const maxVal = Math.max(...Object.values(finalDomainCounts));
+                                            const percentage = maxVal > 0 ? (count / maxVal) * 100 : 50;
+                                            return (
+                                                <div key={idx}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                                                        <span>{domain}</span>
+                                                        <strong>{count} paper{count > 1 ? 's' : ''}</strong>
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
+                                                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <div style={{ width: `${percentage}%`, height: '100%', background: 'var(--gradient-accent)' }}></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="card">
+                        </div>
+
+                        {currentUser.role !== 'dean' && (
+                            <div className="card" style={{ marginTop: '1.5rem' }}>
                                 <h2>My Research Portfolio</h2>
                                 <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
                                     Assigned research outputs and verification status for <strong>{currentUser.email}</strong>.
