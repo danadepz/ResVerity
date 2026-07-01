@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActivKlass ResVerity - HEI Research Output Governance Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for premium analytical visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Institutional SSO Login Overlay -->
+    <div id="ssoOverlay" class="sso-overlay">
+        <div class="sso-card">
+            <div class="logo-group" style="justify-content: center; margin-bottom: 1.5rem;">
+                <div class="logo-icon">V</div>
+                <span class="logo-text">ResVerity</span>
+            </div>
+            <h2>Institutional SSO Portal</h2>
+            <p>Access the HEI Research Governance Dashboard using your university credentials.</p>
+            <div class="form-group">
+                <label for="ssoEmail">Institutional Email</label>
+                <input type="email" id="ssoEmail" class="form-input" placeholder="e.g., student.author@uc.edu.ph" value="author.delacruz@uc.edu.ph">
+            </div>
+            <div class="form-group">
+                <label for="ssoRole">Role</label>
+                <select id="ssoRole" class="form-input" style="background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.08);">
+                    <option value="student">Student / Author</option>
+                    <option value="dean">Research Dean / Administrator</option>
+                    <option value="coauthor">Co-Author (Simulate Reviewer)</option>
+                </select>
+            </div>
+            <button id="ssoLoginBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Authenticate</button>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo-group">
+                <div class="logo-icon">V</div>
+                <span class="logo-text">ResVerity</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a id="nav-dashboard" class="active">Dashboard</a></li>
+                    <li><a id="nav-submit">Submit Research</a></li>
+                    <li><a id="nav-verification">Co-Author Shield</a></li>
+                    <li><a id="nav-directory">Public Directory</a></li>
+                </ul>
+            </nav>
+            <div class="user-profile" style="display: flex; align-items: center; gap: 0.75rem;">
+                <span id="userBadge" class="badge badge-published" style="margin-right: 0;">Student</span>
+                <span id="userName" style="font-size: 0.85rem; color: var(--text-secondary);">author.delacruz@uc.edu.ph</span>
+                <button id="logoutBtn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+
+        <!-- 1. Dashboard Section -->
+        <section id="section-dashboard" class="section active">
+            <div class="analytics-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-info">
+                        <h3>Registered Submissions</h3>
+                        <div class="value" id="val-total">42</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔒</div>
+                    <div class="stat-info">
+                        <h3>Awaiting Sign-offs</h3>
+                        <div class="value" id="val-pending" style="color: #f59e0b;">5</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-info">
+                        <h3>SDG Mapped Papers</h3>
+                        <div class="value" id="val-sdg" style="color: var(--accent-purple);">37</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🛡️</div>
+                    <div class="stat-info">
+                        <h3>Anti-Piracy Match Rate</h3>
+                        <div class="value" id="val-match" style="color: var(--accent-emerald);">100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>DASIG Institutional Governance Command Center</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Visual analytics on research velocities and SDG impact distributions across departments.</p>
+                <div class="charts-row">
+                    <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h4 style="margin-bottom: 1rem;">SDG Target Alignments</h4>
+                        <canvas id="sdgChart" style="max-height: 250px;"></canvas>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h4 style="margin-bottom: 1rem;">Thematic Domain Mapping</h4>
+                        <canvas id="domainChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Submission Section -->
+        <section id="section-submit" class="section">
+            <div class="card">
+                <h2>Submit Academic Output</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Upload a draft PDF and document metadata. ResVerity parses the file to verify names and trigger the Co-Author Shield.</p>
+                
+                <div class="dropzone" id="pdfDropzone">
+                    <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">📤</span>
+                    <strong style="color: var(--text-primary);">Drag & Drop Draft PDF here</strong>
+                    <span style="color: var(--text-secondary); display: block; font-size: 0.85rem; margin-top: 0.25rem;">or click to browse local files</span>
+                    <input type="file" id="pdfFileInput" style="display: none;" accept=".pdf">
+                    <div id="fileUploadStatus" style="margin-top: 1rem; font-weight: 600; color: var(--accent-cyan); display: none;">
+                        📄 PDF Loaded: <span id="uploadedFileName">research-paper.pdf</span>
+                    </div>
+                </div>
+
+                <form id="submissionForm" onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <label for="paperTitle">Research Title</label>
+                        <input type="text" id="paperTitle" class="form-input" placeholder="Enter output title" value="Secure Governance Architecture for Local HEI Metadata Systems">
+                    </div>
+                    <div class="form-group">
+                        <label for="paperAbstract">Abstract</label>
+                        <textarea id="paperAbstract" class="form-input" rows="4" placeholder="Enter abstract..."></textarea>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="paperVisibility">Visibility Control Tier</label>
+                            <select id="paperVisibility" class="form-input" style="background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.08);">
+                                <option value="PUBLIC_ABSTRACT">Public Abstract Only (Protects IP)</option>
+                                <option value="INSTITUTIONAL">Institutional Access Only</option>
+                                <option value="OPEN_ACCESS">Open Access (Fully downloadable)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="coAuthorsInput">Co-Author Institutional Emails (Comma Separated)</label>
+                            <input type="text" id="coAuthorsInput" class="form-input" placeholder="e.g. coauthor1@uc.edu.ph, coauthor2@uc.edu.ph" value="jane.doe@uc.edu.ph, mark.smith@uc.edu.ph">
+                        </div>
+                    </div>
+
+                    <div style="text-align: right; margin-top: 1.5rem;">
+                        <button type="button" id="btnSubmitPaper" class="btn btn-primary">Lock & Send for Sign-offs</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. Co-Author Shield / Verification Section -->
+        <section id="section-verification" class="section">
+            <div class="card">
+                <h2>Co-Author Shield Verification</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Academic assets stay in a protected, locked draft state until all co-authors sign off. Below is your pending queue.</p>
+                
+                <div id="pendingVerificationsList" class="grid-layout">
+                    <!-- Dynamic items will be generated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Public Directory Section -->
+        <section id="section-directory" class="section">
+            <div class="card">
+                <div class="directory-header">
+                    <div>
+                        <h2>Public Innovation Directory</h2>
+                        <p style="color: var(--text-secondary);">Connecting students' validated outputs with local businesses, community organizations, and accelerators.</p>
+                    </div>
+                </div>
+
+                <div class="directory-header" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="directorySearchInput" placeholder="Search by SDG alignment, technology domain, title or abstract content...">
+                    </div>
+                </div>
+
+                <div id="directoryList" class="grid-layout">
+                    <!-- Dynamic items will be generated here -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer style="margin-top: auto; padding: 2rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+        &copy; 2026 ActivKlass ResVerity. Built for Flip the Script: Reverse Pitch Challenge #4 (DASIG).
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
