@@ -1,0 +1,23 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+resverity.db
+resverity.db-journal
+
+# Environment configurations
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
