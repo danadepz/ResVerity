@@ -10,6 +10,14 @@ export default function Home() {
         role: "student"
     });
     const [password, setPassword] = useState('');
+    const [toast, setToast] = useState({ message: '', visible: false, type: 'info' });
+
+    const showToast = (message, type = 'info') => {
+        setToast({ message, visible: true, type });
+        setTimeout(() => {
+            setToast(prev => ({ ...prev, visible: false }));
+        }, 4000);
+    };
     
     // Portal Sections Navigation
     const [activeSection, setActiveSection] = useState('dashboard');
@@ -70,7 +78,7 @@ export default function Home() {
     // SSO login simulator
     const handleLogin = () => {
         if (!currentUser.email || !password) {
-            alert("Please enter both institutional email and password.");
+            showToast("Please enter both institutional email and password.", "error");
             return;
         }
 
@@ -144,7 +152,7 @@ export default function Home() {
     // Submit Paper to Backend
     const submitResearch = async () => {
         if (!paperTitle || !paperAbstract) {
-            alert("Title and Abstract are required.");
+            showToast("Title and Abstract are required.", "error");
             return;
         }
 
@@ -153,7 +161,7 @@ export default function Home() {
             .filter(email => email !== "");
 
         if (coAuthors.length === 0) {
-            alert("At least one co-author is required to verify the output submission.");
+            showToast("At least one co-author is required to verify the output submission.", "error");
             return;
         }
 
@@ -172,7 +180,7 @@ export default function Home() {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                alert("Verification requested! Co-author email approvals triggered.");
+                showToast("Verification requested! Co-author email approvals triggered.", "success");
                 setPaperTitle('');
                 setPaperAbstract('');
                 setFileName('');
@@ -180,7 +188,7 @@ export default function Home() {
                 setActiveSection('verification');
                 fetchSubmissions();
             } else {
-                alert("Submission failed.");
+                showToast("Submission failed.", "error");
             }
         } catch (e) {
             console.error(e);
@@ -194,7 +202,7 @@ export default function Home() {
                 method: "POST"
             });
             if (res.ok) {
-                alert("Cryptographic signature registered!");
+                showToast("Cryptographic signature registered!", "success");
                 fetchSubmissions();
             }
         } catch (e) {
@@ -245,6 +253,26 @@ export default function Home() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            
+            {/* FLOATING TOAST NOTIFICATIONS */}
+            {toast.visible && (
+                <div style={{
+                    position: 'fixed',
+                    top: '2rem',
+                    right: '2rem',
+                    background: toast.type === 'error' ? 'var(--accent-rose)' : toast.type === 'success' ? 'var(--accent-emerald)' : 'var(--gradient-accent)',
+                    color: 'white',
+                    padding: '1rem 1.5rem',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+                    zIndex: 250,
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    {toast.message}
+                </div>
+            )}
             
             {/* SSO LOGIN OVERLAY SCREEN */}
             {!isLoggedIn && (
@@ -588,7 +616,7 @@ export default function Home() {
                                                     </span>
                                                 ))}
                                             </div>
-                                            <button onClick={() => alert(`Access tier details: ${sub.visibility}`)} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+                                            <button onClick={() => showToast(`Access tier details: ${sub.visibility}`, "info")} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
                                                 Request Full PDF
                                             </button>
                                         </div>
