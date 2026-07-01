@@ -249,7 +249,66 @@ export default function Home() {
     // Aggregate Analytics Calculations
     const totalCount = submissions.length;
     const pendingCount = submissions.filter(s => s.status === 'PENDING_VERIFICATION').length;
-    const sdgMappedCount = submissions.filter(s => s.tags?.some(t => t.type === 'SDG')).length;
+    
+    // Dynamically calculate SDG and Domain tags based on current dataset
+    const sdgCounts = {};
+    const domainCounts = {};
+    
+    submissions.forEach(s => {
+        const tagsList = s.tags || [];
+        tagsList.forEach(t => {
+            const name = t.name || t.tag_name;
+            const type = t.type || t.tag_type;
+            if (type === 'SDG') {
+                sdgCounts[name] = (sdgCounts[name] || 0) + 1;
+            } else {
+                domainCounts[name] = (domainCounts[name] || 0) + 1;
+            }
+        });
+    });
+
+    const finalSdgCounts = Object.keys(sdgCounts).length > 0 ? sdgCounts : { "SDG 11: Sustainable Cities": 1, "SDG 9: Industry & Innovation": 1, "SDG 8: Decent Work": 1 };
+    const finalDomainCounts = Object.keys(domainCounts).length > 0 ? domainCounts : { "IoT & Hardware": 1, "AI & Analytics": 1 };
+
+    const sdgMappedCount = Object.keys(sdgCounts).length > 0 ? Object.keys(sdgCounts).length : 2;
+
+    // Generate Dynamic activity feed
+    const activityFeed = [];
+    submissions.forEach(s => {
+        const uEmail = s.uploadedBy || s.uploaded_by || "student@uc.edu.ph";
+        activityFeed.push({
+            icon: "📤",
+            text: `Draft paper "${s.title}" uploaded by ${uEmail}`,
+            date: s.date || "2026-06-25"
+        });
+        
+        const coAuthorsList = s.coAuthors || [];
+        coAuthorsList.forEach(co => {
+            if (co.approved) {
+                activityFeed.push({
+                    icon: "✍️",
+                    text: `Co-author ${co.email} verified and signed "${s.title}"`,
+                    date: s.date || "2026-06-25"
+                });
+            }
+        });
+
+        if (s.status === 'PUBLISHED') {
+            activityFeed.push({
+                icon: "🎉",
+                text: `Paper "${s.title}" is 100% verified & published to Public Directory`,
+                date: s.date || "2026-06-25"
+            });
+        } else if (s.status === 'REJECTED') {
+            activityFeed.push({
+                icon: "❌",
+                text: `Paper "${s.title}" was disapproved by reviewers`,
+                date: s.date || "2026-06-25"
+            });
+        }
+    });
+
+    const latestActivities = activityFeed.slice(-4).reverse();
 
     // Filter directory list
     const filteredDirectory = submissions.filter(s => {
@@ -389,9 +448,7 @@ export default function Home() {
             </header>
 
             {/* MAIN PORTAL PAGES */}
-            <main>
-                
-                {/* 1. DASHBOARD PANEL */}
+                     {/* 1. DASHBOARD PANEL */}
                 {activeSection === 'dashboard' && (
                     <div>
                         <div className="analytics-grid">
@@ -425,56 +482,109 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <div className="card">
-                            <h2>DASIG Governance Analytics Center</h2>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                                Real-time mapping of research outcomes to UN Sustainable Development Goals (SDGs) and technical domains.
-                            </p>
-                            
-                            <div className="charts-row">
-                                {/* SDG SVG Doughnut Map representation */}
-                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                                    <h4 style={{ marginBottom: '1rem', textAlign: 'left' }}>SDG Target Alignments</h4>
-                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-                                        <svg width="180" height="180" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-                                            <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                                            {/* Simulated SVG Doughnut ring segments based on data counts */}
-                                            <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--accent-purple)" strokeWidth="3.2" strokeDasharray="40 100" strokeDashoffset="0" />
-                                            <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--accent-cyan)" strokeWidth="3.2" strokeDasharray="30 100" strokeDashoffset="-40" />
-                                            <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--accent-emerald)" strokeWidth="3.2" strokeDasharray="20 100" strokeDashoffset="-70" />
-                                        </svg>
+                        {currentUser.role === 'dean' ? (
+                            <div className="card">
+                                <h2>DASIG Governance Analytics Center</h2>
+                                <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                                    Real-time mapping of research outcomes to UN Sustainable Development Goals (SDGs) and technical domains.
+                                </p>
+                                
+                                <div className="charts-row">
+                                    {/* SDG target counts representation */}
+                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                        <h4 style={{ marginBottom: '1rem' }}>SDG Target Alignments</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {Object.entries(finalSdgCounts).map(([sdg, count], idx) => (
+                                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ color: idx === 0 ? 'var(--accent-purple)' : idx === 1 ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontSize: '1rem' }}>●</span>
+                                                        {sdg}
+                                                    </span>
+                                                    <strong>{count} paper{count > 1 ? 's' : ''}</strong>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', justifyContent: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
-                                        <span><span style={{ color: 'var(--accent-purple)' }}>●</span> SDG 9</span>
-                                        <span><span style={{ color: 'var(--accent-cyan)' }}>●</span> SDG 11</span>
-                                        <span><span style={{ color: 'var(--accent-emerald)' }}>●</span> SDG 8</span>
-                                    </div>
-                                </div>
 
-                                {/* Tech Domains SVG Bar chart representation */}
-                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                                    <h4 style={{ marginBottom: '1.5rem' }}>Thematic Domain Distributon</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
-                                                <span>IoT & Hardware</span>
-                                                <strong>2 papers</strong>
-                                            </div>
-                                            <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                                                <div style={{ width: '66%', height: '100%', background: 'var(--gradient-accent)' }}></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
-                                                <span>AI & Analytics</span>
-                                                <strong>1 paper</strong>
-                                            </div>
-                                            <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                                                <div style={{ width: '33%', height: '100%', background: 'var(--gradient-accent)' }}></div>
-                                            </div>
+                                    {/* Tech Domains dynamic Bar chart representation */}
+                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                                        <h4 style={{ marginBottom: '1.5rem' }}>Thematic Domain Distribution</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            {Object.entries(finalDomainCounts).map(([domain, count], idx) => {
+                                                const maxVal = Math.max(...Object.values(finalDomainCounts));
+                                                const percentage = maxVal > 0 ? (count / maxVal) * 100 : 50;
+                                                return (
+                                                    <div key={idx}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                                                            <span>{domain}</span>
+                                                            <strong>{count} paper{count > 1 ? 's' : ''}</strong>
+                                                        </div>
+                                                        <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${percentage}%`, height: '100%', background: 'var(--gradient-accent)' }}></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        ) : (
+                            <div className="card">
+                                <h2>My Research Portfolio</h2>
+                                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                                    Assigned research outputs and verification status for <strong>{currentUser.email}</strong>.
+                                </p>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {submissions.filter(s => s.uploadedBy === currentUser.email || s.uploaded_by === currentUser.email || s.coAuthors?.some(co => co.email === currentUser.email)).length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                            No active portfolio documents. Tap "Submit Research" to upload your first paper draft.
+                                        </div>
+                                    ) : (
+                                        submissions.filter(s => s.uploadedBy === currentUser.email || s.uploaded_by === currentUser.email || s.coAuthors?.some(co => co.email === currentUser.email)).map(sub => {
+                                            const totalCo = sub.coAuthors?.length || 0;
+                                            const approvedCo = sub.coAuthors?.filter(co => co.approved).length || 0;
+                                            return (
+                                                <div key={sub.id} style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                                    <div>
+                                                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>{sub.title}</h4>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Uploaded: {sub.date || 'Just now'}</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                                        <div style={{ textAlign: 'right' }}>
+                                                            <div style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Sign-off Progress</div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{approvedCo} of {totalCo} verified</div>
+                                                        </div>
+                                                        <span className={`badge ${sub.status === 'PUBLISHED' ? 'badge-published' : sub.status === 'REJECTED' ? 'badge-sdg' : 'badge-pending'}`} style={{ color: sub.status === 'REJECTED' ? 'var(--accent-rose)' : '' }}>
+                                                            {sub.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* LIVE SYSTEM ACTIVITY STREAM */}
+                        <div className="card" style={{ marginTop: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ color: 'var(--accent-emerald)', animation: 'pulse 1.5s infinite' }}>●</span> Live Verification Activity Logs
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {latestActivities.length === 0 ? (
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>System idle. Awaiting user actions.</div>
+                                ) : (
+                                    latestActivities.map((act, index) => (
+                                        <div key={index} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--border-color)' }}>
+                                            <span>{act.icon}</span>
+                                            <div style={{ flex: 1, color: 'var(--text-primary)' }}>{act.text}</div>
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{act.date}</span>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
