@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import pdfParse from 'pdf-parse';
-import { GoogleGenAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request) {
     try {
@@ -45,7 +45,7 @@ async function classifyResearch(title, abstract) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
         try {
-            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const ai = new GoogleGenerativeAI(apiKey);
             const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
             
             const prompt = `
