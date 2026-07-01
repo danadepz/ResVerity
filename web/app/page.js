@@ -251,6 +251,17 @@ export default function Home() {
         return matches;
     });
 
+    const renderMessageText = (text) => {
+        const escaped = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        const formatted = escaped
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n/g, "<br>");
+        return { __html: formatted };
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             
@@ -655,9 +666,8 @@ export default function Home() {
                                     wordBreak: 'break-word',
                                     whiteSpace: 'pre-line'
                                 }}
-                            >
-                                {msg.text}
-                            </div>
+                                dangerouslySetInnerHTML={renderMessageText(msg.text)}
+                            />
                         ))}
                         {copilotLoading && (
                             <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: 'var(--radius-md)', maxWidth: '85%', alignSelf: 'flex-start', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
