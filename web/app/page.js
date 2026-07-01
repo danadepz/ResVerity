@@ -448,7 +448,9 @@ export default function Home() {
             </header>
 
             {/* MAIN PORTAL PAGES */}
-                     {/* 1. DASHBOARD PANEL */}
+            <main>
+                
+                {/* 1. DASHBOARD PANEL */}
                 {activeSection === 'dashboard' && (
                     <div>
                         <div className="analytics-grid">
