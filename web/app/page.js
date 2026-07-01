@@ -272,6 +272,31 @@ export default function Home() {
 
     const sdgMappedCount = Object.keys(sdgCounts).length > 0 ? Object.keys(sdgCounts).length : 2;
 
+    // Compute SVG doughnut segments dynamically
+    const sdgPairs = Object.entries(finalSdgCounts);
+    const sdgTotal = sdgPairs.reduce((acc, [_, count]) => acc + count, 0);
+    let cumulativePercent = 0;
+    const colors = ['var(--accent-purple)', 'var(--accent-cyan)', 'var(--accent-emerald)', '#f59e0b', '#ec4899'];
+    const svgCircles = sdgPairs.map(([sdg, count], idx) => {
+        const percent = sdgTotal > 0 ? (count / sdgTotal) * 100 : 33.3;
+        const strokeDash = `${percent} 100`;
+        const strokeOffset = -cumulativePercent;
+        cumulativePercent += percent;
+        return (
+            <circle 
+                key={idx}
+                cx="18" 
+                cy="18" 
+                r="15.915" 
+                fill="none" 
+                stroke={colors[idx % colors.length]} 
+                strokeWidth="3.2" 
+                strokeDasharray={strokeDash} 
+                strokeDashoffset={strokeOffset} 
+            />
+        );
+    });
+
     // Generate Dynamic activity feed
     const activityFeed = [];
     submissions.forEach(s => {
@@ -492,13 +517,19 @@ export default function Home() {
                             
                             <div className="charts-row">
                                 {/* SDG target counts representation */}
-                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                    <h4 style={{ marginBottom: '1rem' }}>SDG Target Alignments</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                    <h4 style={{ alignSelf: 'flex-start', margin: 0 }}>SDG Target Alignments</h4>
+                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '130px' }}>
+                                        <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                                            <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                                            {svgCircles}
+                                        </svg>
+                                    </div>
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                         {Object.entries(finalSdgCounts).map(([sdg, count], idx) => (
-                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <span style={{ color: idx === 0 ? 'var(--accent-purple)' : idx === 1 ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontSize: '1rem' }}>●</span>
+                                                    <span style={{ color: colors[idx % colors.length], fontSize: '1rem' }}>●</span>
                                                     {sdg}
                                                 </span>
                                                 <strong>{count} paper{count > 1 ? 's' : ''}</strong>
