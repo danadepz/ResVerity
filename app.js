@@ -1,69 +1,14 @@
-// ResVerity - Mock Database and Application State
+// ResVerity Client Engine - Connected to FastAPI / Supabase backend
+
+const API_BASE = "http://127.0.0.1:8000/api";
+
 let appState = {
     currentUser: {
         email: "author.delacruz@uc.edu.ph",
         role: "student"
     },
-    submissions: [
-        {
-            id: 1,
-            title: "IoT-Based Microclimate Monitoring for Urban Farms",
-            abstract: "This research presents a wireless sensor node deployment designed for monitoring soil humidity, ambient temperature, and sunlight levels in urban community spaces in Cebu. Using a low-cost microcontroller grid, the system reports real-time parameters to an open-source analytics dashboard.",
-            visibility: "OPEN_ACCESS",
-            status: "PUBLISHED",
-            uploadedBy: "student.farmer@uc.edu.ph",
-            coAuthors: [
-                { email: "john.farmer@uc.edu.ph", approved: true },
-                { email: "admin.dean@uc.edu.ph", approved: true }
-            ],
-            tags: [
-                { name: "SDG 11: Sustainable Cities", type: "SDG" },
-                { name: "IoT & Hardware", type: "TECH" }
-            ],
-            date: "2026-06-15"
-        },
-        {
-            id: 2,
-            title: "Predictive Analytics for Small Business Supply Chains",
-            abstract: "Applying lightweight linear regression model scripts to sales data from local sari-sari stores to forecast optimal inventory requirements. The target output helps reduce waste in food stocks and optimize capital usage.",
-            visibility: "PUBLIC_ABSTRACT",
-            status: "PUBLISHED",
-            uploadedBy: "maria.negosyo@uc.edu.ph",
-            coAuthors: [
-                { email: "carlos.santos@uc.edu.ph", approved: true }
-            ],
-            tags: [
-                { name: "SDG 8: Decent Work & Growth", type: "SDG" },
-                { name: "AI & Analytics", type: "TECH" }
-            ],
-            date: "2026-06-20"
-        },
-        {
-            id: 3,
-            title: "Decentralized Micro-Credentials and Certificate Registry",
-            abstract: "A secure verification architecture designed to store academic credentials using digital signatures, solving transcript fraud in local colleges.",
-            visibility: "INSTITUTIONAL",
-            status: "PENDING_VERIFICATION",
-            uploadedBy: "jane.doe@uc.edu.ph",
-            coAuthors: [
-                { email: "author.delacruz@uc.edu.ph", approved: false },
-                { email: "mark.smith@uc.edu.ph", approved: false }
-            ],
-            tags: [
-                { name: "SDG 9: Industry & Innovation", type: "SDG" },
-                { name: "Cybersecurity", type: "TECH" }
-            ],
-            date: "2026-06-30"
-        }
-    ]
+    submissions: []
 };
-
-// Default sample abstracts for auto-fill simulation
-const SAMPLE_ABSTRACTS = [
-    "Integrating NLP parsing routines with higher education repositories to map capstones and student thesis outputs to sustainable development targets. This architecture helps university heads audit and evaluate overall academic impact.",
-    "A custom-tailored cryptographic checklist scheme allowing co-authors of scientific publications to authenticate their inclusion via official SSO channels. This mechanism eliminates unauthorized submissions and prevents intellectual property piracy.",
-    "An open-access platform built to showcase local engineering student prototypes to regional business councils, enabling faster incubation, seed funding, and commercial software licensing deals."
-];
 
 // Reference Chart instances
 let sdgChartInstance = null;
@@ -75,8 +20,47 @@ document.addEventListener("DOMContentLoaded", () => {
     setupAuth();
     setupDropzone();
     setupSubmission();
-    updateUI();
+    loadSubmissions();
 });
+
+// Load Submissions from FastAPI backend
+async function loadSubmissions() {
+    try {
+        const res = await fetch(`${API_BASE}/submissions`);
+        if (res.ok) {
+            appState.submissions = await res.json();
+            updateUI();
+        } else {
+            console.warn("Backend API returned error, operating with local state fallback.");
+        }
+    } catch (e) {
+        console.warn("Cannot connect to backend server. Run: uvicorn main:app in /backend folder.");
+        // Set basic mock items if offline
+        loadMockFallback();
+    }
+}
+
+function loadMockFallback() {
+    appState.submissions = [
+        {
+            id: 1,
+            title: "IoT-Based Microclimate Monitoring for Urban Farms",
+            abstract: "Wireless sensor node deployment designed for monitoring soil humidity levels in urban Cebu community gardens.",
+            visibility: "OPEN_ACCESS",
+            status: "PUBLISHED",
+            uploadedBy: "student.farmer@uc.edu.ph",
+            coAuthors: [
+                { email: "john.farmer@uc.edu.ph", approved: true }
+            ],
+            tags: [
+                { name: "SDG 11: Sustainable Cities", type: "SDG" },
+                { name: "IoT & Hardware", type: "TECH" }
+            ],
+            date: "2026-06-15"
+        }
+    ];
+    updateUI();
+}
 
 // Navigation Engine
 function setupNavigation() {
@@ -94,7 +78,7 @@ function setupNavigation() {
     });
 }
 
-// Authentication Logic (Simulation)
+// Authentication Logic
 function setupAuth() {
     const ssoOverlay = document.getElementById("ssoOverlay");
     const loginBtn = document.getElementById("ssoLoginBtn");
@@ -122,7 +106,7 @@ function setupAuth() {
         }
 
         ssoOverlay.style.display = "none";
-        updateUI();
+        loadSubmissions();
     });
 
     logoutBtn.addEventListener("click", () => {
@@ -130,7 +114,7 @@ function setupAuth() {
     });
 }
 
-// Drag & Drop File Upload simulation
+// Drag & Drop File Upload with Real parsing
 function setupDropzone() {
     const dropzone = document.getElementById("pdfDropzone");
     const fileInput = document.getElementById("pdfFileInput");
@@ -154,32 +138,49 @@ function setupDropzone() {
         e.preventDefault();
         dropzone.style.borderColor = "rgba(255, 255, 255, 0.15)";
         if (e.dataTransfer.files.length > 0) {
-            handleUploadedFile(e.dataTransfer.files[0]);
+            uploadFileAndParse(e.dataTransfer.files[0]);
         }
     });
 
     fileInput.addEventListener("change", (e) => {
         if (e.target.files.length > 0) {
-            handleUploadedFile(e.target.files[0]);
+            uploadFileAndParse(e.target.files[0]);
         }
     });
 
-    function handleUploadedFile(file) {
+    async function uploadFileAndParse(file) {
         uploadedName.textContent = file.name;
         statusText.style.display = "block";
+        statusText.textContent = "Analyzing document content with AI...";
         
-        // Dynamic simulated metadata parsing:
-        // Convert filename to Title casing, auto-insert custom abstract
-        let rawName = file.name.replace(/\.pdf$/i, "").replace(/[_-]/g, " ");
-        formTitle.value = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-        formAbstract.value = SAMPLE_ABSTRACTS[Math.floor(Math.random() * SAMPLE_ABSTRACTS.length)];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch(`${API_BASE}/upload`, {
+                method: "POST",
+                body: formData
+            });
+            if (res.ok) {
+                const parsed = await res.json();
+                formTitle.value = parsed.title;
+                formAbstract.value = parsed.abstract;
+                statusText.innerHTML = `📄 PDF Parsed and Classified successfully!`;
+            } else {
+                statusText.textContent = "Failed to parse PDF backend side.";
+            }
+        } catch (e) {
+            statusText.textContent = "Offline Mode: Simulated PDF metadata loading.";
+            formTitle.value = file.name.replace(".pdf", "").replace("_", " ").toUpperCase();
+            formAbstract.value = "An open-access platform built to showcase local engineering student prototypes.";
+        }
     }
 }
 
-// Lock & Submit
+// Lock & Submit to Backend
 function setupSubmission() {
     const btn = document.getElementById("btnSubmitPaper");
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
         const title = document.getElementById("paperTitle").value;
         const abstract = document.getElementById("paperAbstract").value;
         const visibility = document.getElementById("paperVisibility").value;
@@ -190,61 +191,58 @@ function setupSubmission() {
             return;
         }
 
-        // Format co-authors
         const coAuthors = coAuthorsRaw.split(",")
             .map(email => email.trim())
-            .filter(email => email !== "")
-            .map(email => ({ email: email, approved: false }));
+            .filter(email => email !== "");
 
         if (coAuthors.length === 0) {
             alert("At least one co-author is required to verify the output submission.");
             return;
         }
 
-        // Auto NLP Tag Extraction (Simulated)
-        const tags = [];
-        const textToSearch = (title + " " + abstract).toLowerCase();
-        
-        if (textToSearch.includes("sustainable") || textToSearch.includes("city") || textToSearch.includes("urban")) {
-            tags.push({ name: "SDG 11: Sustainable Cities", type: "SDG" });
-        } else if (textToSearch.includes("data") || textToSearch.includes("governance") || textToSearch.includes("repository")) {
-            tags.push({ name: "SDG 9: Industry & Innovation", type: "SDG" });
-        } else {
-            tags.push({ name: "SDG 4: Quality Education", type: "SDG" });
-        }
-
-        if (textToSearch.includes("nlp") || textToSearch.includes("intelligence") || textToSearch.includes("predictive")) {
-            tags.push({ name: "AI & Analytics", type: "TECH" });
-        } else if (textToSearch.includes("cryptographic") || textToSearch.includes("security") || textToSearch.includes("blockchain")) {
-            tags.push({ name: "Cybersecurity", type: "TECH" });
-        } else {
-            tags.push({ name: "Data Systems", type: "TECH" });
-        }
-
-        // Add to state
-        const newDoc = {
-            id: appState.submissions.length + 1,
+        const payload = {
             title,
             abstract,
             visibility,
-            status: "PENDING_VERIFICATION",
-            uploadedBy: appState.currentUser.email,
-            coAuthors,
-            tags,
-            date: new Date().toISOString().split("T")[0]
+            uploaded_by: appState.currentUser.email,
+            co_authors: coAuthors
         };
 
-        appState.submissions.push(newDoc);
-        alert(`Verification requested! ${coAuthors.length} co-author alerts triggered.`);
-        
-        // Reset Form
+        try {
+            const res = await fetch(`${API_BASE}/submit`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                alert(`Verification requested! Co-author email alerts triggered.`);
+            } else {
+                alert("Backend storage failed.");
+            }
+        } catch (e) {
+            alert("Offline Mock Submission triggered.");
+            // Offline fallback
+            appState.submissions.push({
+                id: Date.now(),
+                title,
+                abstract,
+                visibility,
+                status: "PENDING_VERIFICATION",
+                uploadedBy: appState.currentUser.email,
+                coAuthors: coAuthors.map(email => ({ email, approved: false })),
+                tags: [{ name: "SDG 9: Industry & Innovation", type: "SDG" }],
+                date: new Date().toISOString().split("T")[0]
+            });
+        }
+
+        // Reset
         document.getElementById("paperTitle").value = "";
         document.getElementById("paperAbstract").value = "";
         document.getElementById("fileUploadStatus").style.display = "none";
         
-        // Jump to verification page
         document.getElementById("nav-verification").click();
-        updateUI();
+        await loadSubmissions();
     });
 }
 
@@ -267,7 +265,6 @@ function renderDashboardStats() {
 }
 
 function renderCharts() {
-    // Collect stats
     const sdgCounts = {};
     const domainCounts = {};
 
@@ -285,6 +282,8 @@ function renderCharts() {
     const sdgData = Object.values(sdgCounts);
     const domainLabels = Object.keys(domainCounts);
     const domainData = Object.values(domainCounts);
+
+    if (sdgLabels.length === 0) return;
 
     // Render SDG Chart
     const ctxSdg = document.getElementById("sdgChart").getContext("2d");
@@ -348,7 +347,6 @@ function renderVerifications() {
         const item = document.createElement("div");
         item.className = "paper-card";
         
-        // Co-author verification bubbles
         let bubbles = sub.coAuthors.map(author => {
             const statusClass = author.approved ? 'status-approved' : 'status-pending';
             return `<div class="co-author-bubble">
@@ -357,7 +355,6 @@ function renderVerifications() {
             </div>`;
         }).join("");
 
-        // Check if current user is an un-approved co-author
         const myCoAuthorObj = sub.coAuthors.find(a => a.email === appState.currentUser.email && !a.approved);
         const actionButton = myCoAuthorObj 
             ? `<button class="btn btn-primary" onclick="approveDocument(${sub.id})" style="margin-top: 1rem; font-size: 0.85rem; padding: 0.5rem 1rem;">✍️ Sign-Off Cryptographically</button>`
@@ -375,28 +372,29 @@ function renderVerifications() {
     });
 }
 
-// Global approval function called by dynamic buttons
-window.approveDocument = function(subId) {
-    const sub = appState.submissions.find(s => s.id === subId);
-    if (!sub) return;
-
-    // Approve for current user
-    const authorObj = sub.coAuthors.find(a => a.email === appState.currentUser.email);
-    if (authorObj) {
-        authorObj.approved = true;
-        authorObj.approvedAt = new Date().toISOString();
+// Sign off via API
+window.approveDocument = async function(subId) {
+    try {
+        const res = await fetch(`${API_BASE}/approve?submission_id=${subId}&email=${appState.currentUser.email}`, {
+            method: "POST"
+        });
+        
+        if (res.ok) {
+            alert("Signature successfully registered!");
+        } else {
+            alert("Approval registration failed.");
+        }
+    } catch (e) {
+        // Fallback for offline mode
+        const sub = appState.submissions.find(s => s.id === subId);
+        if (sub) {
+            const author = sub.coAuthors.find(a => a.email === appState.currentUser.email);
+            if (author) author.approved = true;
+            if (sub.coAuthors.every(a => a.approved)) sub.status = "PUBLISHED";
+        }
+        alert("Offline: Recorded sign-off signature.");
     }
-
-    // Check if all are now approved
-    const allApproved = sub.coAuthors.every(a => a.approved);
-    if (allApproved) {
-        sub.status = "PUBLISHED";
-        alert(`Success! All co-authors have signed off. "${sub.title}" is now published to the directory.`);
-    } else {
-        alert("Your cryptographic signature has been recorded. Document remains locked until other co-authors sign off.");
-    }
-
-    updateUI();
+    await loadSubmissions();
 };
 
 function renderDirectory() {
@@ -440,6 +438,5 @@ function renderDirectory() {
         list.appendChild(item);
     });
 
-    // Re-attach input listener for filtering
     document.getElementById("directorySearchInput").oninput = renderDirectory;
 }
