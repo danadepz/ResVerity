@@ -51,7 +51,7 @@ header {
 }
 
 .header-container {
-    max-width: 1600px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 1rem 2rem;
     display: flex;
@@ -109,7 +109,7 @@ nav a:hover, nav a.active {
 
 main {
     flex: 1;
-    max-width: 1600px;
+    max-width: 1800px;
     width: 100%;
     margin: 0 auto;
     padding: 2rem;
@@ -420,7 +420,7 @@ main {
 }
 
 .landing-section {
-    max-width: 1600px;
+    max-width: 1800px;
     width: 100%;
     margin: 0 auto;
     padding: 3.5rem 2rem;
@@ -467,7 +467,7 @@ main {
 
 .landing-hero {
     position: relative;
-    max-width: 1600px;
+    max-width: 1800px;
     width: 100%;
     margin: 0 auto;
     padding: 4rem 2rem 2rem;
