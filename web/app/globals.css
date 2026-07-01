@@ -51,8 +51,7 @@ header {
 }
 
 .header-container {
-    max-width: 100%;
-    width: 100%;
+    max-width: 1440px;
     margin: 0 auto;
     padding: 1rem 2rem;
     display: flex;
@@ -110,7 +109,7 @@ nav a:hover, nav a.active {
 
 main {
     flex: 1;
-    max-width: 100%;
+    max-width: 1440px;
     width: 100%;
     margin: 0 auto;
     padding: 2rem;
@@ -421,7 +420,7 @@ main {
 }
 
 .landing-section {
-    max-width: 100%;
+    max-width: 1440px;
     width: 100%;
     margin: 0 auto;
     padding: 3.5rem 2rem;
@@ -468,7 +467,7 @@ main {
 
 .landing-hero {
     position: relative;
-    max-width: 100%;
+    max-width: 1440px;
     width: 100%;
     margin: 0 auto;
     padding: 4rem 2rem 2rem;
