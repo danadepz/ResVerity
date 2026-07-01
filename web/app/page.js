@@ -9,6 +9,7 @@ export default function Home() {
         email: "author.delacruz@uc.edu.ph",
         role: "student"
     });
+    const [password, setPassword] = useState('');
     
     // Portal Sections Navigation
     const [activeSection, setActiveSection] = useState('dashboard');
@@ -68,10 +69,29 @@ export default function Home() {
 
     // SSO login simulator
     const handleLogin = () => {
+        if (!currentUser.email || !password) {
+            alert("Please enter both institutional email and password.");
+            return;
+        }
+
+        // Automatically determine user authorization role based on domain pattern
+        let role = 'student';
+        const emailLower = currentUser.email.toLowerCase();
+        if (emailLower.includes('dean') || emailLower.includes('admin')) {
+            role = 'dean';
+        } else if (emailLower.includes('coauthor') || emailLower.includes('jane.doe') || emailLower.includes('mark.smith') || emailLower.includes('john.farmer')) {
+            role = 'coauthor';
+        }
+
+        setCurrentUser(prev => ({
+            ...prev,
+            role: role
+        }));
         setIsLoggedIn(true);
     };
 
     const handleLogout = () => {
+        setPassword('');
         setIsLoggedIn(false);
     };
 
@@ -247,17 +267,14 @@ export default function Home() {
                             />
                         </div>
                         <div className="form-group">
-                            <label>Designated Role</label>
-                            <select 
+                            <label>Password</label>
+                            <input 
+                                type="password" 
                                 className="form-input" 
-                                value={currentUser.role}
-                                onChange={(e) => setCurrentUser({...currentUser, role: e.target.value})}
-                                style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.08)' }}
-                            >
-                                <option value="student">Student / Author</option>
-                                <option value="dean">Research Dean / Administrator</option>
-                                <option value="coauthor">Co-Author (Verified Signatory)</option>
-                            </select>
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
                         </div>
                         <button onClick={handleLogin} className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
                             Authenticate
