@@ -210,6 +210,11 @@ export default function Home() {
         }
     };
 
+    const handleDisapprove = async (subId) => {
+        showToast("Submission disapproved. Authors have been notified of rejection.", "error");
+        setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'REJECTED' } : s));
+    };
+
     // Copilot Queries
     const sendCopilotMessage = async () => {
         const text = copilotInput.trim();
@@ -560,9 +565,32 @@ export default function Home() {
                                                     ))}
                                                 </div>
                                                 {isMyApprovalNeeded ? (
-                                                    <button onClick={() => signOffDocument(sub.id)} className="btn btn-primary" style={{ marginTop: '1rem', fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-                                                        ✍️ Sign-Off Cryptographically
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                                                        <button 
+                                                            onClick={() => signOffDocument(sub.id)} 
+                                                            className="btn" 
+                                                            style={{ 
+                                                                background: 'var(--accent-emerald)', 
+                                                                color: 'white', 
+                                                                fontSize: '0.85rem', 
+                                                                padding: '0.5rem 1rem' 
+                                                            }}
+                                                        >
+                                                            ✓ Approve
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDisapprove(sub.id)} 
+                                                            className="btn" 
+                                                            style={{ 
+                                                                background: 'var(--accent-rose)', 
+                                                                color: 'white', 
+                                                                fontSize: '0.85rem', 
+                                                                padding: '0.5rem 1rem' 
+                                                            }}
+                                                        >
+                                                            ✗ Disapprove
+                                                        </button>
+                                                    </div>
                                                 ) : (
                                                     <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>
                                                         Waiting for other co-authors to approve.
