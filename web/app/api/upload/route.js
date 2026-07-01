@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
-import pdfParse from 'pdf-parse';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createRequire } from 'module';
+
+// Polyfill canvas classes for pdf-parse inside Node environment
+if (typeof global !== 'undefined') {
+    global.DOMMatrix = global.DOMMatrix || class DOMMatrix {};
+    global.ImageData = global.ImageData || class ImageData {};
+    global.Path2D = global.Path2D || class Path2D {};
+}
+
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 export async function POST(request) {
     try {
