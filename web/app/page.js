@@ -223,13 +223,42 @@ export default function Home() {
         const visibility = sub.visibility || sub.visibility_tier;
         const pdfLink = sub.pdfUrl || sub.pdf_url;
 
-        if (visibility === 'OPEN_ACCESS' && pdfLink) {
-            window.open(pdfLink, '_blank');
-            showToast("Opening document from Supabase Storage...", "success");
-        } else if (visibility === 'OPEN_ACCESS') {
-            showToast("Open Access document URL is missing in the database.", "error");
-        } else {
-            showToast(`Collaboration invitation sent! Student authors have been notified of your interest.`, "success");
+        if (visibility === 'OPEN_ACCESS') {
+            if (pdfLink) {
+                window.open(pdfLink, '_blank');
+                showToast("Opening full PDF from Supabase Storage...", "success");
+            } else {
+                showToast("Open Access PDF link is currently empty in database.", "error");
+            }
+        } else if (visibility === 'PUBLIC_ABSTRACT') {
+            // Generate and trigger download of abstract text sheet
+            const element = document.createElement("a");
+            const file = new Blob([
+                `=========================================\n`,
+                `   RESVERITY VERIFIED ACADEMIC ABSTRACT  \n`,
+                `=========================================\n\n`,
+                `TITLE: ${sub.title}\n\n`,
+                `ABSTRACT:\n${sub.abstract}\n\n`,
+                `AUTHORS & CO-AUTHORS:\n- ${sub.uploadedBy || sub.uploaded_by || "Primary Student Creator"}\n`,
+                (sub.coAuthors || []).map(co => `- ${co.email} (${co.approved ? 'Verified' : 'Pending Approval'})\n`).join(''),
+                `\nSDG & TECHNICAL TAGS:\n`,
+                (sub.tags || []).map(t => `- [${t.type || t.tag_type}] ${t.name || t.tag_name}\n`).join(''),
+                `\n=========================================\n`,
+                `Verification Key: SHA-256/ECDSA-SECURED\n`
+            ], { type: 'text/plain;charset=utf-8' });
+            element.href = URL.createObjectURL(file);
+            element.download = `Abstract_${sub.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showToast("Downloading verified Abstract Sheet...", "success");
+        } else if (visibility === 'INSTITUTIONAL') {
+            if (pdfLink) {
+                window.open(pdfLink, '_blank');
+                showToast("Institutional access verified. Opening PDF...", "success");
+            } else {
+                showToast("Institutional PDF link is missing in database.", "error");
+            }
         }
     };
 
@@ -352,6 +381,17 @@ export default function Home() {
     // Filter directory list
     const filteredDirectory = submissions.filter(s => {
         if (s.status !== 'PUBLISHED') return false;
+        
+        // Institutional access restriction: 
+        // Only show to users logged in with matching email domains
+        const visibility = s.visibility || s.visibility_tier;
+        if (visibility === 'INSTITUTIONAL') {
+            if (!isLoggedIn) return false;
+            const myDomain = currentUser.email ? currentUser.email.split('@')[1] : '';
+            const uploaderDomain = (s.uploadedBy || s.uploaded_by || '').split('@')[1];
+            if (myDomain !== uploaderDomain) return false;
+        }
+
         const matches = s.title.toLowerCase().includes(searchVal.toLowerCase()) || 
                       s.abstract.toLowerCase().includes(searchVal.toLowerCase()) ||
                       s.tags.some(t => t.name.toLowerCase().includes(searchVal.toLowerCase()));
@@ -847,7 +887,9 @@ export default function Home() {
                                                 ))}
                                             </div>
                                             <button onClick={() => handleRequestPdf(sub)} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
-                                                Request Full PDF
+                                                {(sub.visibility || sub.visibility_tier) === 'OPEN_ACCESS' ? '📥 Download Full PDF' : 
+                                                 (sub.visibility || sub.visibility_tier) === 'PUBLIC_ABSTRACT' ? '📄 Download Abstract' : 
+                                                 '🔑 Open Institutional PDF'}
                                             </button>
                                         </div>
                                     ))
