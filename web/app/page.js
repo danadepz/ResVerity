@@ -219,6 +219,20 @@ export default function Home() {
         setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'REJECTED' } : s));
     };
 
+    const handleRequestPdf = (sub) => {
+        const visibility = sub.visibility || sub.visibility_tier;
+        const pdfLink = sub.pdfUrl || sub.pdf_url;
+
+        if (visibility === 'OPEN_ACCESS' && pdfLink) {
+            window.open(pdfLink, '_blank');
+            showToast("Opening document from Supabase Storage...", "success");
+        } else if (visibility === 'OPEN_ACCESS') {
+            showToast("Open Access document URL is missing in the database.", "error");
+        } else {
+            showToast(`Collaboration invitation sent! Student authors have been notified of your interest.`, "success");
+        }
+    };
+
     // Copilot Queries
     const sendCopilotMessage = async () => {
         const text = copilotInput.trim();
@@ -832,7 +846,7 @@ export default function Home() {
                                                     </span>
                                                 ))}
                                             </div>
-                                            <button onClick={() => showToast(`Access tier details: ${sub.visibility}`, "info")} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+                                            <button onClick={() => handleRequestPdf(sub)} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
                                                 Request Full PDF
                                             </button>
                                         </div>
