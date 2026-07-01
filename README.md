@@ -13,11 +13,11 @@ However, exposing research publicly risks intellectual property piracy. Trust is
 ---
 
 ## 💡 The Solution: ResVerity
-**ResVerity** is a unified, secure portal designed to collect, index, audit, and showcase institutional research projects under strict access control and anti-piracy mechanisms:
+**ResVerity** is a unified, secure portal designed to collect, index, audit, and showcase Cebu's academic outputs under strict access control and anti-piracy mechanisms:
 
 1. **Standardized Curation Pipeline:** Captures precise metadata, funding structures, and SDG alignment tags.
 2. **Co-Author Shield:** Academic papers remain locked in a hidden draft status until all listed co-authors authenticate via institutional SSO and cryptographically sign off.
-3. **Semantic Mapping Engine:** Uses abstract NLP processing to categorize papers into sustainable goals and technical domains automatically.
+3. **Semantic Mapping Engine (AI Tagger):** Uses Python-driven PDF scraping and the Gemini API to extract abstract content and auto-categorize papers into UN Sustainable Development Goals (SDGs) and technical domains.
 4. **Public Discovery Directory:** Connects Cebu's validated student research outputs with local incubators, companies, and community organizations.
 
 ---
@@ -25,19 +25,39 @@ However, exposing research publicly risks intellectual property piracy. Trust is
 ## 🛠️ Project Structure
 ```bash
 DASIG/
-├── index.html     # Portal View Layout (SSO, Submit, Board, Directory)
-├── style.css      # Premium Glassmorphic Design System Styles
-└── app.js         # Interactive State & Front-End Simulation Logic
+├── backend/
+│   ├── main.py             # FastAPI entry point & REST endpoints
+│   ├── parser.py           # PDF Text Extraction (PyPDF)
+│   ├── tagger.py           # Gemini API & Fallback SDG classifier
+│   ├── requirements.txt    # Python dependencies
+│   └── schema.sql          # Database table structures (PostgreSQL)
+├── index.html              # Frontend portal dashboard (SSO, Submission, Directory)
+├── style.css               # Design system styling (Glassmorphism & Dark Mode)
+└── app.js                  # Frontend client connector & mock fallbacks
 ```
 
 ---
 
-## 🚀 Live Demo Guide
+## 🚀 How to Run the App Locally
 
-Open [index.html](index.html) directly in your browser.
+### **1. Spin up the Backend API**
+Open your terminal in the `backend/` directory:
 
-1. **Authenticate:** Log in using the simulated institutional SSO screen.
-2. **Submit Paper:** Drag and drop a research draft PDF. The portal parses details and populates fields. Add co-authors.
-3. **Sign-off Review:** Log in as one of the listed co-authors to sign off cryptographically, unlocking the paper to the public directory.
-4. **Search Directory:** Search papers via SDG numbers (e.g. `SDG 11`), technologies, or keywords.
-5. **Dashboard Analytics:** Analyze publishing velocities and SDG alignments via Chart.js visualizations.
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run the API server
+uvicorn main:app --reload
+```
+*Note: The backend automatically boots in **SQLite Mode** (`resverity.db`) if no Supabase environment credentials are set, making it fully ready for presentation without database setups!*
+
+### **2. Open the Frontend**
+Open [index.html](index.html) directly in your browser. The client will automatically detect the local API server and switch from simulation mode to live database operations.
+
+---
+
+## 🔒 Crucial Security Architecture
+* **Row-Level Security (RLS):** Database visibility tiers keep draft publications locked from public metadata queries.
+* **Hybrid Auth Flow:** Restricts uploads strictly to institutional SSO verification bounds (e.g., student/faculty logins).
+* **Pre-signed Access Links:** High-tier documents serve raw PDFs via temporary AWS S3/Supabase Storage links to prevent direct URL sharing.
