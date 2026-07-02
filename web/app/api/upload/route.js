@@ -3,15 +3,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createRequire } from 'module';
 import { supabase, useSupabase } from '@/lib/supabase';
 
-// Polyfill canvas classes for pdf-parse inside Node environment
-if (typeof global !== 'undefined') {
-    global.DOMMatrix = global.DOMMatrix || class DOMMatrix {};
-    global.ImageData = global.ImageData || class ImageData {};
-    global.Path2D = global.Path2D || class Path2D {};
-}
-
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 export async function POST(request) {
     try {
@@ -23,11 +16,14 @@ export async function POST(request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
         
-        // Parse PDF text layers using pdf-parse
+        // Parse PDF text layers using pdf-parse v2
         let pdfText = "";
         try {
-            const data = await pdfParse(buffer);
-            pdfText = data.text;
+            const parser = new PDFParse({ data: new Uint8Array(buffer) });
+            const textResult = await parser.getText();
+            await parser.destroy();
+            // Drop the "-- 1 of 3 --" page markers pdf-parse v2 inserts
+            pdfText = textResult.text.replace(/^\s*-- \d+ of \d+ --\s*$/gm, "");
         } catch (e) {
             console.error("PDF Parsing error:", e);
         }
@@ -56,10 +52,8 @@ export async function POST(request) {
             }
         }
 
-        // Parse title from PDF first line or filename
-        const lines = pdfText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-        const parsedTitle = lines[0] ? lines[0] : file.name.replace(".pdf", "").replace(/[_-]/g, " ");
-        const parsedAbstract = pdfText.substring(0, 1000) || "Abstract could not be extracted automatically.";
+        const parsedTitle = extractTitle(pdfText, file.name);
+        const parsedAbstract = extractAbstract(pdfText) || "Abstract could not be extracted automatically.";
 
         // AI Tagging / Classification
         const tags = await classifyResearch(parsedTitle, parsedAbstract);
@@ -77,12 +71,61 @@ export async function POST(request) {
     }
 }
 
+function extractTitle(pdfText, fileName) {
+    const fallback = fileName.replace(/\.pdf$/i, "").replace(/[_-]/g, " ").trim();
+    if (!pdfText) return fallback;
+
+    // A person's name: 2-6 capitalized words including a middle initial ("Darwin A. Delima")
+    const isAuthorLine = (line) =>
+        /^(?:[A-Z][\w'’.\-]*[\s,]+){1,5}[A-Z][\w'’\-]+\.?$/.test(line) && /\b[A-Z]\.(\s|$)/.test(line);
+    const isAffiliationLine = (line) =>
+        /@|\buniversity\b|\bcolleges?\b|\bdepartment\b|\binstitutes?\b|\bschool\b|\bcampus\b|\bfaculty\b/i.test(line);
+
+    // Titles often wrap across several lines; join leading lines and stop at
+    // a blank line, the abstract heading, or the author/affiliation block.
+    // If the author block comes first (title is a cover image), use the filename.
+    const rawLines = pdfText.replace(/\r/g, "").split("\n");
+    const titleLines = [];
+    for (const raw of rawLines) {
+        const line = raw.trim();
+        if (!line) {
+            if (titleLines.length > 0) break;
+            continue;
+        }
+        if (/^abstract\b/i.test(line) || isAuthorLine(line) || isAffiliationLine(line)) break;
+        titleLines.push(line);
+        if (titleLines.join(" ").length > 150) break;
+    }
+    const title = titleLines.join(" ").replace(/\s+/g, " ").trim();
+    return title.length >= 8 ? title : fallback;
+}
+
+function extractAbstract(pdfText) {
+    if (!pdfText) return "";
+    const text = pdfText.replace(/\r/g, "");
+
+    // Find the "Abstract" heading (handles "Abstract", "ABSTRACT:", "Abstract—...")
+    const startMatch = text.match(/\babstract\b[\s:.\-–—]*/i);
+    if (startMatch) {
+        const rest = text.substring(startMatch.index + startMatch[0].length);
+        // Capture until the next section heading (Keywords / Index Terms / Introduction)
+        const endMatch = rest.match(/\n\s*(keywords?|key words|index terms|general terms|(?:[1I][\s.):\-–—]{0,4})?introduction)\b/i);
+        const abstract = (endMatch ? rest.substring(0, endMatch.index) : rest.substring(0, 1500))
+            .replace(/\s+/g, " ")
+            .trim();
+        if (abstract.length >= 40) return abstract.substring(0, 2000);
+    }
+
+    // No abstract heading found: fall back to the first chunk of body text
+    return text.replace(/\s+/g, " ").trim().substring(0, 1000);
+}
+
 async function classifyResearch(title, abstract) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
         try {
             const ai = new GoogleGenerativeAI(apiKey);
-            const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
             
             const prompt = `
             Analyze the following research title and abstract. 

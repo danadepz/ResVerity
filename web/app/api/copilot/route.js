@@ -47,7 +47,7 @@ export async function POST(request) {
         if (apiKey) {
             try {
                 const ai = new GoogleGenerativeAI(apiKey);
-                const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
                 const prompt = `
                 You are the ResVerity AI Copilot, a research discovery assistant. The user is asking: "${query}"
